@@ -1,0 +1,53 @@
+name: Hermes Bun runtime artifact
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24.21.0'
+      - uses: pnpm/action-setup@v4
+        with:
+          version: '10.10.0'
+          run_install: false
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.4.4'
+      - name: Build dependencies
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm --filter @samchon/graph build
+      - name: Assemble production runtime
+        run: |
+          mkdir -p dist/hermes-runtime
+          pnpm --filter @samchon/graph --prod deploy dist/hermes-runtime
+          test -s dist/hermes-runtime/lib/bin.js
+          test -d dist/hermes-runtime/node_modules
+          test -d dist/hermes-runtime/sidecars
+          test -s dist/hermes-runtime/node_modules/@samchon/graph-sitter/lib/index.js
+      - name: Bun runtime smoke test
+        run: |
+          cd dist/hermes-runtime
+          bun ./lib/bin.js --help > /tmp/samchon-graph-help.txt
+          test -s /tmp/samchon-graph-help.txt
+      - name: Package and checksum
+        run: |
+          set -euo pipefail
+          printf '%s\n' "$GITHUB_SHA" > dist/hermes-runtime/UPSTREAM_SHA
+          printf '%s\n' linux-x64 > dist/hermes-runtime/TARGET
+          tar -C dist -czf samchon-graph-linux-x64.tar.gz hermes-runtime
+          sha256sum samchon-graph-linux-x64.tar.gz > samchon-graph-linux-x64.tar.gz.sha256
+      - uses: actions/upload-artifact@v4
+        with:
+          name: samchon-graph-linux-x64
+          path: |
+            samchon-graph-linux-x64.tar.gz
+            samchon-graph-linux-x64.tar.gz.sha256
+          retention-days: 7
+          if-no-files-found: error
