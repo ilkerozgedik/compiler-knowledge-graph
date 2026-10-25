@@ -31,11 +31,11 @@ jobs:
           test -d dist/hermes-runtime/node_modules
           test -d dist/hermes-runtime/sidecars
           test -s dist/hermes-runtime/node_modules/@samchon/graph-sitter/lib/index.js
-      - name: Bun runtime smoke test
+      - name: Bun packaged runtime MCP and indexing smoke
         run: |
-          cd dist/hermes-runtime
-          bun ./lib/bin.js --help > /tmp/samchon-graph-help.txt
+          bun dist/hermes-runtime/lib/bin.js --help > /tmp/samchon-graph-help.txt
           test -s /tmp/samchon-graph-help.txt
+          timeout 120s bun .github/scripts/hermes-bun-smoke.mjs dist/hermes-runtime
       - name: Package and checksum
         run: |
           set -euo pipefail
