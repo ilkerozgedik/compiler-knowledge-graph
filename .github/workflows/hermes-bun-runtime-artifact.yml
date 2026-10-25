@@ -26,7 +26,7 @@ jobs:
       - name: Assemble production runtime
         run: |
           mkdir -p dist/hermes-runtime
-          pnpm --filter @samchon/graph --prod deploy dist/hermes-runtime
+          pnpm --filter @samchon/graph --prod deploy --legacy dist/hermes-runtime
           test -s dist/hermes-runtime/lib/bin.js
           test -d dist/hermes-runtime/node_modules
           test -d dist/hermes-runtime/sidecars
